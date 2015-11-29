@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import glob, sys, unittest
-sys.path.insert(0, glob.glob('build/lib.*')[0])
+#sys.path.insert(0, glob.glob('build/lib.*')[0])
 import pcap
 
 class PcapTestCase(unittest.TestCase):
