@@ -19,7 +19,9 @@ def main():
         payload = ''
         hex_payload = ''
         index = 0
+        ipp_list = []
         output = ''
+        legit = False
 # the last 4 character in the chunked data is \r\n\r\n (or 0d0a0d0a)
         for ts, pkt in pc:
             payload = decode(pkt).data.data.data
@@ -33,10 +35,26 @@ def main():
 
             index += 1
         
-        for ii in range(begin, end+1):
-            output += pkt_list[ii]
+        for ii in range(begin, end):
+            if len(ipp_list) == 0:
+                ipp_list.append(pkt_list[ii])
+                continue
+
+# the ending iter is not getting incremented
+            legit = pkt_list[ii] != ipp_list[0] and pkt_list[ii] != '' and pkt_list[ii][-4:] != '0d0a'
+
+            for jj in range(1, len(ipp_list)):
+                legit = legit and pkt_list[ii] != ipp_list[jj] and pkt_list[ii] != '' and pkt_list[ii][-4:] != '0d0a'
+
+            if legit == True:
+                ipp_list.append(pkt_list[ii])
+                legit = False
+
+        for kk in range(0, len(ipp_list)):
+            output += ipp_list[kk]
 
         print output
+        import pdb; pdb.set_trace()
 
     except KeyboardInterrupt:
         print 'Stoped' 
