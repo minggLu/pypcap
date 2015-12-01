@@ -42,18 +42,15 @@ def main():
                 ipp_list.append(pkt_list[ii])
                 continue
 
-            # the ending iter is not getting incremented
-            legit = pkt_list[ii] != ipp_list[0]
-
+            # preset
+            legit = True
             # rip off repeating data, '' and '\r\n'
             # except the ending chunk where ends with '300d0a0d0a'
             for jj in range(0, len(ipp_list)):
                 legit = legit and pkt_list[ii] != ipp_list[jj] and pkt_list[ii] != '' and (pkt_list[ii][-4:] != '0d0a' or pkt_list[ii][-10:] == '300d0a0d0a')
 
             if legit == True:
-                import pdb; pdb.set_trace()
                 ipp_list.append(pkt_list[ii])
-                legit = False
 
         # the first item is the request, data starts on the 2nd piece
         for kk in range(1, len(ipp_list)):
@@ -63,6 +60,7 @@ def main():
         f = open("ipp.txt", "w")
         f.write(output)
         print output
+        print len(output)
 
     except KeyboardInterrupt:
         print 'Stoped'
