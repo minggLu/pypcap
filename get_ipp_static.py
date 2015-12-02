@@ -2,6 +2,10 @@
 
 import dpkt, pcap
 
+#def replace_between(text, begin, end, alternative=''):
+#    middle = text.split(begin, 1)[1].split(end, 1)[0]
+#        return text.replace(middle, alternative)
+
 def main():
     name = "printer6.pcapng"
     pc = pcap.pcap(name)
@@ -58,8 +62,24 @@ def main():
         for kk in range(1, len(ipp_list)):
             output += ipp_list[kk]
 
-        output = output.replace('0d0a3830300d0a', '')
+
+        #output = output.replace('0d0a3830300d0a', '')
         output = output[:-14]
+
+        # actually write a generic solution
+        first = 0
+        second = 0
+        start = 0
+        n = 0
+        while output.find('0d0a', start) > -1:
+            first = output.find('0d0a', start)
+            second = output.find('0d0a', first+1)
+            if second - first == 10:
+                pattern = output[first:second+4]
+                output = ''.join(output.split(pattern))
+                start = second + 5
+                first = 0
+                second = 0
         f = open("ipp.txt", "w")
         f.write(output)
         f.close()
