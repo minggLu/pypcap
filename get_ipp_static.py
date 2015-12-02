@@ -47,7 +47,9 @@ def main():
             # rip off repeating data, '' and '\r\n'
             # except the ending chunk where ends with '300d0a0d0a'
             for jj in range(0, len(ipp_list)):
-                legit = legit and pkt_list[ii] != ipp_list[jj] and pkt_list[ii] != '' and (pkt_list[ii][-4:] != '0d0a' or pkt_list[ii][-10:] == '300d0a0d0a')
+                legit = legit and pkt_list[ii] != ipp_list[jj] and pkt_list[ii] != ''
+            if pkt_list[ii][-4:] == '0d0a':
+               legit = legit and pkt_list[ii][-10:] == '300d0a0d0a'
 
             if legit == True:
                 ipp_list.append(pkt_list[ii])
@@ -56,11 +58,14 @@ def main():
         for kk in range(1, len(ipp_list)):
             output += ipp_list[kk]
 
+        output = output.replace('0d0a3830300d0a', '')
         output = output[:-14]
         f = open("ipp.txt", "w")
         f.write(output)
+        f.close()
         print output
         print len(output)
+        import pdb; pdb.set_trace()
 
     except KeyboardInterrupt:
         print 'Stoped'
