@@ -30,6 +30,7 @@ def __my_handler(ts,pkt, pc, ipp_list):
         print hex_payload
 
     elif len(ipp_list) != 0 and hex_payload[-10:] == '300d0a0d0a':
+        print hex_payload
         raise KeyboardInterrupt
         #raise Exception()
 
@@ -41,11 +42,11 @@ def main():
         if o == '-i': name = a
         else: usage()
         
-    pc = pcap.pcap(name)
+    pc = pcap.pcap(name, immediate=True)
     ipp_list = []
     output = ''
     # IPP protocol typically use destination port 631
-    filter = 'tcp'
+    filter = 'tcp dst port 631'
     pc.setfilter(filter)
     try:
         index = 0
@@ -80,6 +81,7 @@ def main():
         nrecv, ndrop, nifdrop = pc.stats()
         print '\n%d packets received by filter' % nrecv
         print '%d packets dropped by kernel' % ndrop
+        print '%d packets dropped by interface' % nifdrop
 
 if __name__ == '__main__':
     main()
