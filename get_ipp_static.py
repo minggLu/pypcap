@@ -7,12 +7,13 @@ import dpkt, pcap
 #        return text.replace(middle, alternative)
 
 def main():
-    name = "printer6.pcapng"
+    name = "printer4.pcapng"
     pc = pcap.pcap(name)
     begin = 0
     end = 0
     pkt_list = []
     ipp_list = []
+    data_list = []
     output = ''
     # IPP protocol typically use destination port 631
     filter = 'tcp dst port 631'
@@ -32,7 +33,7 @@ def main():
             # beginning of Sent-Document
             # IPP version: \x02\x00 (2-byte)
             # Operation-id = \x00\x06 (2-byte)
-            if begin == 0 and payload[:4] == '\x02\x00\x00\x06':
+            if begin == 0 and hex_payload[:8] == '02000006':
                 begin = index
 
             # end of chunked encoding is '0\r\n\r\n' (or 30d0a0d0a)
@@ -46,22 +47,21 @@ def main():
                 ipp_list.append(pkt_list[ii])
                 continue
 
-            # preset
+            # pre-set
             legit = True
             # rip off repeating data, '' and '\r\n'
             # except the ending chunk where ends with '300d0a0d0a'
             for jj in range(0, len(ipp_list)):
-                legit = legit and pkt_list[ii] != ipp_list[jj] and pkt_list[ii] != ''
+                legit = legit and pkt_list[ii] != ipp_list[jj] and pkt_list[ii] != '' and (len(pkt_list[ii]) == 2896 or ii == end)
+
             if pkt_list[ii][-4:] == '0d0a':
                legit = legit and pkt_list[ii][-10:] == '300d0a0d0a'
 
             if legit == True:
                 ipp_list.append(pkt_list[ii])
 
-        # the first item is the request, data starts on the 2nd piece
         for kk in range(1, len(ipp_list)):
             output += ipp_list[kk]
-
 
         #output = output.replace('0d0a3830300d0a', '')
         output = output[:-14]
@@ -74,13 +74,14 @@ def main():
         while output.find('0d0a', start) > -1:
             first = output.find('0d0a', start)
             second = output.find('0d0a', first+1)
+            import pdb; pdb.set_trace()
             if second - first == 10:
                 pattern = output[first:second+4]
                 output = ''.join(output.split(pattern))
                 start = second + 5
                 first = 0
                 second = 0
-        f = open("ipp.txt", "w")
+        f = open("ipp1txt", "w")
         f.write(output)
         f.close()
         print output
