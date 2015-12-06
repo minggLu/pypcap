@@ -85,8 +85,6 @@ def main():
                 first = 0
                 second = 0
             else:
-                pattern = output[first:first+4]
-                output = ''.join(output.split(pattern))
                 import pdb; pdb.set_trace()
                 start = first + 5
                 first = 0
