@@ -33,7 +33,6 @@ def get_data(ts,pkt, pc, pkt_list):
         print hex_payload
         raise KeyboardInterrupt
 
-
 def main():
     opts, args = getopt.getopt(sys.argv[1:], 'i:h')
     name = None
@@ -42,6 +41,7 @@ def main():
         else: usage()
         
     output = ''
+    legit = True
 
     # starts capturing with pypcap library
     pc = pcap.pcap(name, immediate=True)
@@ -57,39 +57,33 @@ def main():
         # with a user callback, in this case is get_data 
         # get_data looks for the ipp packets that
         # contains document data
-        pc.loop(-1, get_ipp, pc, pkt_list)
-
+        pc.loop(-1, get_data, pc, pkt_list)
 
         # process tcp segments between beginning of operation-id 6 
         # and end of chunking
-        for ii in range(begin, end+1):
-            if len(ipp_list) == 0:
-                ipp_list.append(pkt_list[ii])
-                continue
-
-            # pre-set
-            legit = True
+        for ii in range(0, len(pkt_list)):
             # rip off repeating data, '' and '\r\n'
-            # check to avoid repeating data segment
             # except the ending chunk where ends with '300d0a0d0a'
-            # tcp segments with the chunked data all have length = 1448 byte
-            for jj in range(0, len(ipp_list)):
-                legit = legit and pkt_list[ii] != ipp_list[jj] and pkt_list[ii] != '' and (len(pkt_list[ii]) == 2896 or ii == end)
+            # check for length of data segment == 1446*2 
+            for jj in range(0, max(1, len(ipp_list))):
+                legit = legit and pkt_list[ii] != ipp_list[jj] and pkt_list[ii] != '' and len(pkt_list[ii]) >= 128
 
-            if pkt_list[ii][-4:] == '0d0a':
-               legit = legit and pkt_list[ii][-10:] == '300d0a0d0a'
+            if pkt_list[ii][-4:] == '0d0a': 
+                legit = legit and pkt_list[ii][-10:] == '300d0a0d0a'
+            # check for header != 0200000x, and delete the segment right before
+            elif pkt_list[ii][:7] == '0200000':
+                legit = False
 
+            # append packet to ipp_list if it is legit
             if legit == True:
                 ipp_list.append(pkt_list[ii])
 
-        # write data in to output string
         for kk in range(1, len(ipp_list)):
             output += ipp_list[kk]
 
-        # rip off end of chunk encoding hex bits
         output = output[:-14]
 
-        # remove random '\r\n' + some bytes + '\r\n' in output
+        # to get rid of '\r\n' + ???? + '\r\n' within data
         first = 0
         second = 0
         start = 0
@@ -98,18 +92,26 @@ def main():
             first = output.find('0d0a', start)
             second = output.find('0d0a', first+1)
             import pdb; pdb.set_trace()
-            if second > 0 and second - first <= 64:
+
+            if second - first <= 64 and second > 0:
                 pattern = output[first:second+4]
                 output = ''.join(output.split(pattern))
                 start = second + 5
                 first = 0
                 second = 0
-        f = open("ipp.txt", "w")
-        f.write(output)
-        f.close()
-        print output
-        print len(output)
-        import pdb; pdb.set_trace()
+            else:
+                import pdb; pdb.set_trace()
+                start = first + 5
+                first = 0
+                second = 0
+
+# HERE TO TRANSER "output" string to URF decoding
+#        f = open("ipp3.txt", "w")
+#        f.write(output)
+#        f.close()
+#        print output
+#        print len(output)
+#        import pdb; pdb.set_trace()
 
     except KeyboardInterrupt:
         nrecv, ndrop, nifdrop = pc.stats()
